@@ -85,7 +85,7 @@ class App {
         try{
             $renderRoute->Render($this);
         } catch (Exceptions\RouteNotFound $e){
-            $this->DefineHTTPCode(501, $requestUrl, $e->getMessage());
+            $this->DefineHTTPCode(404, $requestUrl, $e->getMessage());
         } catch (Exception $e){
             $this->ExecuteHTTPCallback(500, $requestUrl, $e->getMessage());
         } catch (Error $e){
