@@ -26,9 +26,12 @@ Acesse o script "public/index.php", configure o nome da aplicação em:
 $app = new App("<Your_Application_Name>");
 ```
 
-Crie uma nova rota usando:
+Defina a criação de uma nova rota usando:
 ```shell
-$app->Bind('/url-da-rota', 'NomeDaView');
+$app->Bind('/<url_da_rota>', '<Nome_da_View>');
 ```
 
-E por fim crie sua view em "Classes/Views/<Nome_da_View>.view.phtml"
+Crie sua view em "Classes/Views/<Nome_da_View>.view.phtml"
+
+Por fim acesse http://localhost:8080 em seu navegador e faça seus testes
+
