@@ -43,23 +43,26 @@ use App\Database\Connection;
 
 require '../Classes/autoload.php';
 
-$app = new App();
+$app = new App("Application name");
 
-$app->Bind('/', 'Home');
-$app->Bind('/home-2', 'Home');
-$app->Bind('/page-2', 'Page-2');
+# Criação de novas rotas/paginas
+$app->Bind('/', 'YourPageFileName');
+$app->Bind('/second-page', 'YourSecondPage');
+$app->Bind('/repeat-first-page', 'YourPageFileName');
 
-$app->BindHTTPResponse(501, '/501', 'Response', function($HTTP_CODE) {
-    echo '<h1>Not implemented I guess</h1>';
+# Criação de uma rota que sera usada como 
+$app->BindHTTPResponse(404, '/pagina-da-rota', 'YourErrorRoute', function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
+    echo "You can call functions here!<br>";
+    echo "Varibles available: <br>";
+    echo "HTTP_CODE: {$HTTP_CODE}<br>";
+    echo "HTTP_REQUEST: {$HTTP_REQUEST}<br>";
+    echo "HTTP_HEADERS: {$HTTP_HEADERS}<br>";
 });
 
-$app->BindHTTPResponse(500, '/500', 'Response', function($HTTP_CODE) {
-    register_shutdown_function(function(){
-        echo 'error?';
-    });
+# Criação de uma função de callback com relação direta ao erro "501"
+$app->HTTPCallback(501, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
+    echo "Error 501 in {$HTTP_REQUEST}";
 });
 
+# Execução da aplicaçao com as configurações feitas
 $app->Mount();
-// $app->Redirect('teste');
-
-// $Conn = new Connection('../Settings/database.ini');
