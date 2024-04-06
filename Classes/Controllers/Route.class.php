@@ -2,8 +2,11 @@
 
 namespace App\Controllers;
 
+use App\Exceptions\RouteNotFound;
+
 class Route {
 
+    private \App\App $App;
     private string $UrlPath;
     private string $FilePath;
     private $RenderCallback;
@@ -20,6 +23,7 @@ class Route {
 
     public function Render(\App\App $app) : void {
 
+        $this->App = $app;
         $data = [];
         $callback = $this->RenderCallback;
         if(!is_null($callback) && is_callable($callback)){
@@ -32,17 +36,9 @@ class Route {
     protected function IncludeFile($data) : void {
 
         $fullPath = \App\App::ViewsPath(false)."{$this->FilePath}.view.phtml";
-        echo $fullPath.'<br>';
         if(!file_exists($fullPath)){
-            /*
-             *  # TODO #
-             * 
-             *  Add error throwing
-             */
-            echo 'file does not exist';
-            return;
+            throw new RouteNotFound("The route {$this->FilePath} does not exist.");
         }
-
 
         require $fullPath;
     }
