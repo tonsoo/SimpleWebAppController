@@ -1,6 +1,9 @@
 <?php
 
-register_shutdown_function(function() { ?>
+register_shutdown_function(function() {
+    if(!error_get_last()){
+        return;
+    } ?>
     <style>
         @keyframes fundo{
             0%{background-position: calc(100vw + 51px) calc(0vw + 51px / 2), 100vw calc(0vw + 51px), 100vw calc(0vw + -1px);}
