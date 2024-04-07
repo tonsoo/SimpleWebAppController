@@ -33,6 +33,10 @@ $app->BindHTTPResponse(404, '/pagina-da-rota', 'YourErrorRoute', function($HTTP_
     echo "HTTP_HEADERS(array): ";print_r($HTTP_HEADERS);echo "<br>";
 });
 
+$app->HTTPCallback(404, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
+    echo "Multiple callbacks for and HTTP code {$HTTP_REQUEST}";
+});
+
 # Criação de uma função de callback com relação direta ao erro "501"
 $app->HTTPCallback(501, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
     echo "Error 501 in {$HTTP_REQUEST}";

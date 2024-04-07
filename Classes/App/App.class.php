@@ -4,6 +4,7 @@ namespace App;
 
 use App\Controllers\Route;
 use App\Utils\Url;
+use App\Utils\HTTP;
 use App\Exceptions;
 
 class App {
@@ -68,6 +69,8 @@ class App {
     }
     # END CUSTOM PATHS #
 
+    
+
     # START STATIC FUNCTIONS #
     public static function Root(bool $unixPath = true) : string {
 
@@ -114,9 +117,7 @@ class App {
         } catch (Exception $e){
             $this->ExecuteHTTPCallback(500, $requestUrl, $e->getMessage());
         } catch (Error $e){
-            echo 'errroooo';
-            die();
-            // $this->ExecuteHTTPCallback(500, $requestUrl, $e->getMessage());
+            $this->ExecuteHTTPCallback(500, $requestUrl, $e->getMessage());
         }
     }
 
@@ -150,7 +151,7 @@ class App {
     # START HTTP RESPONSE CONTROLLER FUNCTIONS #
     public function HTTPCallback(int $code, callable $callback = null) : void {
 
-        if(!$this->ValidHTTPReponseCode($code)){
+        if(!HTTP::ValidHTTPReponseCode($code)){
             return;
         }
 
@@ -158,23 +159,18 @@ class App {
             $this->Errors[$code] = [];
         }
 
-        $this->Errors[$code]['callback'] = $callback;
-    }
-
-    private function ValidHTTPReponseCode(int $code) : bool {
-
-        $codeIsValid = preg_match('/^[1-5][0-9]{2}$/', $code);
-        if(!$codeIsValid){
-            trigger_error("Error code '{$code}' is invalid.", E_USER_WARNING);
+        if(!isset($this->Errors['callback'])){
+            $this->Errors['callback'] = [];
         }
-        return $codeIsValid;
+
+        $this->Errors[$code]['callback'][] = $callback;
     }
 
     private function FindHTTPCallback(string $path) : bool {
         
         $path = Url::InnerPath($path);
         foreach($this->Errors as $code => $error) {
-            if($error['route'] === $path){
+            if(isset($error['route']) && $error['route'] === $path){
                 $this->ExecuteHTTPCallback($code, $path);
                 return true;
             }
@@ -185,7 +181,7 @@ class App {
 
     private function ExecuteHTTPCallback(int $code, string $requestUrl, mixed ...$params) : void {
 
-        if(!$this->ValidHTTPReponseCode($code)){
+        if(!HTTP::ValidHTTPReponseCode($code)){
             $this->DefineHTTPCode(500);
             trigger_error('Could not execute HTTP callback', E_USER_WARNING);
             return;
@@ -196,41 +192,19 @@ class App {
 
     public function DefineHTTPCode(int $code, string $requestUrl = '', mixed ...$params) : void {
 
-        if(!$this->ValidHTTPReponseCode($code)){
-            if($code === 500){
-                # Avoid infinite redirects
-                http_response_code(508);
-                die('Fatal error');
+        HTTP::DefineHTTPCode($code, $requestUrl, function() use($code, $requestUrl, $params) {
+            $relatedRoute = $this->Errors[$code]['route'] ?? '';
+            if($relatedRoute && $requestUrl !== $relatedRoute){
+                HTTP::Redirect($relatedRoute, $code);
             }
-            $this->DefineHTTPCode(500);
-            return;
-        }
 
-        http_response_code($code);
-
-        $relatedRoute = $this->Errors[$code]['route'] ?? '';
-        if($relatedRoute && $requestUrl !== $relatedRoute){
-            App::Redirect($relatedRoute, $code);
-        }
-
-        $callback = $this->Errors[$code]['callback'] ?? null;
-        if(!is_null($callback) && is_callable($callback)){
-            call_user_func($callback, $code, $requestUrl, $params);
-        }
-
-        die();
-    }
-
-    public static function Redirect(string $url, int $code = null) : void {
-
-        $url = Url::InnerPath($url);
-        if(!is_null($code)){
-            http_response_code($code);
-        }
-        $root = App::Root();
-        $redirectPath = "/{$root}/{$url}";
-        header("Location: {$redirectPath}");
-        die();
+            $callback = $this->Errors[$code]['callback'] ?? [];
+            foreach($callback as $call){
+                if(!is_null($call) && is_callable($call)){
+                    call_user_func($call, $code, $requestUrl, ...$params);
+                }
+            }
+        }, ...$params);
     }
     # END HTTP RESPONSE CONTROLLER FUNCTIONS #
 }

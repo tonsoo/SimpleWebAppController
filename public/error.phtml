@@ -27,7 +27,7 @@
         <img src="<?= str_replace($_SERVER['DOCUMENT_ROOT'], '', pathinfo($_SERVER['SCRIPT_FILENAME'])['dirname']) ?>/img/default-error.svg" alt="Erro de servidor">
         <h1>Erro</h1>
         <h2>Houve um erro ao processar a requisição!</h2>
-        <h4><?= $error['message'] ?></h4>
+        <h4><?= $error['message'] ?><br><?= print_r($error) ?></h4>
         <h3>Volte mais tarde.</h3>
     </div>
 </div>
