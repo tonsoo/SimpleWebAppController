@@ -4,7 +4,7 @@ Uma mini framework para controle de aplicações web
 
 ## 🛠 Como executar
 
-Verifique-se que você possue o PHP com versão >= 8.4
+Verifique-se que você possue o PHP com versão >= 7.4
 
 Clone o repositorio para o diretorio desejado.
 
