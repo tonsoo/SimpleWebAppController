@@ -69,7 +69,7 @@ class App {
     }
     # END CUSTOM PATHS #
 
-    
+
 
     # START STATIC FUNCTIONS #
     public static function Root(bool $unixPath = true) : string {
@@ -101,16 +101,133 @@ class App {
     public function Mount() : void {
 
         $requestUrl = Url::Diff($this->Root, $_SERVER['REQUEST_URI']);
+        $requestUrlPath = Url::ToArray($requestUrl);
 
-        if(!isset($this->Routes[$requestUrl])){
+        $renderRoute = null;
+
+        $routesData = [];
+        foreach($this->Routes as $path => $route){
+            $routeUrlPath = Url::ToArray($path);
+
+            if(count($requestUrlPath) < count($routeUrlPath) || (count($routeUrlPath) < count($requestUrlPath) && !preg_match('/\*[\/]{0,1}$/', $path))){
+                continue;
+            }
+
+            $routesData[$path] = [];
+
+            $length = count($routeUrlPath);
+
+            $i = 0;
+            for($i = 0; $i < $length; $i++){
+
+                $requestUrlValue = $requestUrlPath[$i];
+                $routeUrlValue = $routeUrlPath[$i];
+
+                if(strtolower($requestUrlValue) == strtolower($routeUrlValue)){
+                    continue;
+                }
+
+                $matches = [];
+                if(preg_match('/^\((.*?)\)$/', $routeUrlValue, $matches)){
+                    # Get url Int value, (value) #
+
+                    if(!is_numeric($requestUrlValue)){
+                        break;
+                    }
+
+                    if(!is_int(+$requestUrlValue)){
+                        break;
+                    }
+
+                    $routesData[$path][$matches[1]] = $requestUrlValue;
+                } else if(preg_match('/^\+\((.*?)\)(\:([0-9]+)){0,1}$/', $routeUrlValue, $matches)){
+                    # Get url Double value, +(value) #
+
+                    if(!is_numeric($requestUrlValue)){
+                        break;
+                    }
+
+                    $captureValue = $requestUrlValue;
+
+                    $format = $matches[3] ?? -1;
+                    if($format >= 0 && is_numeric($format)){
+                        $captureValue = number_format($captureValue, $format);
+                    }
+
+                    $routesData[$path][$matches[1]] = $captureValue;
+                } else if(preg_match('/^\{(.*?)\}(\:([0-9]+)){0,1}(\:([0-9]+)){0,1}$/', $routeUrlValue, $matches)){
+                    # Get url String value, {value} #
+
+                    $captureValue = $requestUrlValue;
+
+                    $sliceStart = $matches[3] ?? -1;
+                    $sliceLength = $matches[5] ?? -1;
+                    if($sliceStart >= 0 && is_numeric($sliceStart)){
+                        if($sliceLength > 0 && is_numeric($sliceLength)){
+                            $captureValue = substr($captureValue, $sliceStart, $sliceLength);
+                        } else {
+                            $captureValue = substr($captureValue, $sliceStart);
+                        }
+                    }
+
+                    $routesData[$path][$matches[1]] = $captureValue;
+                } else if(preg_match('/^\+\{(.*?)\}$/', $routeUrlValue, $matches)){
+                    # Get url Char value/Single character value, +{value} #
+
+                    if(strlen($requestUrlValue) !== 1){
+                        break;
+                    }
+
+                    $captureValue = $requestUrlValue;
+                    $routesData[$path][$matches[1]] = $captureValue;
+                } else if(preg_match('/^\[(.*?)\]$/', $routeUrlValue, $matches)){
+                    # Get url Any value, [value] #
+
+                    $captureValue = $requestUrlValue;
+                    $routesData[$path][$matches[1]] = $captureValue;
+                } else if(preg_match('/^((.*?)\=){0,1}\*$/', $routeUrlValue, $matches)){
+                    # Get url Remain value, * #
+
+                    $remainKey = $matches[2] ?? 'remain';
+                    if(empty($remainKey)){
+                        $remainKey = 'remain';
+                    }
+                    $remainValue = implode('/', array_slice($requestUrlPath, $i));
+
+                    $routesData[$path][$remainKey] = $remainValue;
+                } else {
+                    break;
+                }
+            }
+
+            if($i < $length && isset($routesData[$path])){
+                unset($routesData[$path]);
+            }
+        }
+
+        $routesFound = count($routesData);
+        if(count($routesData) === 0){
             $this->ExecuteHTTPCallback(404, $requestUrl);
             return;
         }
 
-        $renderRoute = $this->Routes[$requestUrl];
+        $routesPaths = array_keys($routesData);
+        $routeRequested = $routesFound - 1;
+        if(!isset($routesPaths[$routeRequested])){
+            $this->ExecuteHTTPCallback(404, $requestUrl);
+            return;
+        }
+
+        $routePath = $routesPaths[$routeRequested];
+        if(!isset($this->Routes[$routePath])){
+            $this->ExecuteHTTPCallback(404, $requestUrl);
+            return;
+        }
+
+        $renderRoute = $this->Routes[$routePath];
 
         try{
-            $renderRoute->Render($this);
+            $renderRoute->Render($this, ...$routesData[$routePath]);
             $this->FindHTTPCallback($requestUrl);
         } catch (Exceptions\RouteNotFound $e){
             $this->DefineHTTPCode(404, $requestUrl, $e->getMessage());

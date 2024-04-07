@@ -24,6 +24,25 @@ $app->Bind('/', 'YourPageFileName');
 $app->Bind('/second-page', 'YourSecondPage');
 $app->Bind('/repeat-first-page', 'YourPageFileName');
 
+# Routes with Int values #
+$app->Bind('/integer/(capture)', 'UrlCapture/Integers');
+$app->Bind('/integer/(capture)/remain=*', 'UrlCapture/Integers');
+
+# Routes with Double values #
+$app->Bind('/double/+(capture)', 'UrlCapture/Doubles');
+$app->Bind('/double-format/+(capture):2', 'UrlCapture/Doubles');
+
+# Routes with String values #
+$app->Bind('/string/{capture}', 'UrlCapture/Strings');
+$app->Bind('/substring/1/{capture}:2', 'UrlCapture/Strings');
+$app->Bind('/substring/2/{capture}:2:4', 'UrlCapture/Strings');
+
+# Routes with Char values/Single characters values #
+$app->Bind('/char/+{capture}', 'UrlCapture/Chars');
+
+# Routes with Any value #
+$app->Bind('/any/[capture]', 'UrlCapture/Any');
+
 # Criação de uma rota que sera usada como 
 $app->BindHTTPResponse(404, '/pagina-da-rota', 'YourErrorRoute', function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
     echo "You can call functions here!<br>";
