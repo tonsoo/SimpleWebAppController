@@ -7,8 +7,10 @@ use App\Utils\Url;
 use App\Exceptions;
 
 class App {
+    public const PATH_TYPE_VIEWS = 101;
 
-    public const VIEWS_PATH = 'Classes'.DIRECTORY_SEPARATOR.'Views'.DIRECTORY_SEPARATOR;
+    private string $ViewsPath;
+
     private string $Root;
     private string $DocumentRoot;
 
@@ -22,6 +24,8 @@ class App {
 
         $this->DocumentRoot = App::DocumentRoot();
         $this->Root = App::Root();
+
+        $this->SetPath('Classes/Views', App::PATH_TYPE_VIEWS);
 
         $this->AutoCreateRoutes = $autoCreateRoutes;
 
@@ -49,6 +53,20 @@ class App {
     }
 
 
+    # START CUSTOM PATHS #
+    public function SetPath(string $path, int $pathType = App::PATH_TYPE_VIEWS) : void {
+
+        $path = Url::InnerPath($path);
+        switch($pathType){
+            case App::PATH_TYPE_VIEWS:
+                $this->ViewsPath = $path;
+                break;
+            default:
+                # TODO
+                # Error/Warning
+        }
+    }
+    # END CUSTOM PATHS #
 
     # START STATIC FUNCTIONS #
     public static function Root(bool $unixPath = true) : string {
@@ -58,13 +76,19 @@ class App {
 
     public static function DocumentRoot(bool $unixPath = true) : string {
 
-        return $unixPath ? Url::ToUnix($_SERVER['DOCUMENT_ROOT']) : $_SERVER['DOCUMENT_ROOT'];
+        return $unixPath ? Url::ToUnix($_SERVER['DOCUMENT_ROOT']) : Url::ToOS($_SERVER['DOCUMENT_ROOT']);
     }
 
-    public static function ViewsPath(bool $unixPath = true) : string {
+    public function ClassesPath(bool $unixPath = true) : string {
 
-        $returnUrl = App::DocumentRoot($unixPath).'/'.App::VIEWS_PATH;
-        return Url::ToOS($returnUrl);
+        $returnUrl = App::DocumentRoot($unixPath, true).'/'.$this->ClassesPath;
+        return $unixPath ? Url::ToUnix($returnUrl) : Url::ToOS($returnUrl);
+    }
+
+    public function ViewsPath(bool $unixPath = true) : string {
+
+        $returnUrl = App::DocumentRoot($unixPath, true)."/{$this->ViewsPath}";
+        return $unixPath ? Url::ToUnix($returnUrl) : Url::ToOS($returnUrl);
     }
     # END STATIC FUNCTIONS #
 
@@ -84,6 +108,7 @@ class App {
 
         try{
             $renderRoute->Render($this);
+            $this->FindHTTPCallback($requestUrl);
         } catch (Exceptions\RouteNotFound $e){
             $this->DefineHTTPCode(404, $requestUrl, $e->getMessage());
         } catch (Exception $e){
@@ -114,13 +139,7 @@ class App {
         $route = $this->IncludeBind($path, $filePath);
 
         $path = Url::InnerPath($path);
-        $this->HTTPCallback($code, function($HTTP_CODE, $HTTP_ROUTE, $HTTP_HEADERS){
-            echo "HTTP_CODE: {$HTTP_CODE}<br>";
-            echo "HTTP_ROUTE: {$HTTP_ROUTE}<br>";
-            echo 'HTTP_HEADERS: ';
-            print_r($HTTP_HEADERS);
-            echo '<br>';
-        }, $path);
+        $this->HTTPCallback($code, $callback);
         if(isset($this->Errors[$code])){
             $this->Errors[$code]['route'] = $path;
         }

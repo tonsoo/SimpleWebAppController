@@ -35,7 +35,7 @@ class Route {
 
     protected function IncludeFile($data) : void {
 
-        $fullPath = \App\App::ViewsPath(false)."{$this->FilePath}.view.phtml";
+        $fullPath = $this->App->ViewsPath(false)."/{$this->FilePath}.view.phtml";
         if(!file_exists($fullPath)){
             throw new RouteNotFound("The route {$this->FilePath} does not exist.");
         }
