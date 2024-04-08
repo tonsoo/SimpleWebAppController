@@ -15,13 +15,13 @@ class Reusable extends Renderable {
     public function __construct(string $alias, string $filePath, int $contentPosition = Reusable::POSITION_AMONG_CONTENT, callable $callback = null) {
 
         switch($contentPosition){
-            case Reusable::POSITION_AMONG_CONTENT:
+            case Reusable::POSITION_BEFORE_CONTENT:
                 
                 break;
             case Reusable::POSITION_AMONG_CONTENT:
             
                 break;
-            case Reusable::POSITION_AMONG_CONTENT:
+            case Reusable::POSITION_AFTER_CONTENT:
             
                 break;
             default:
@@ -35,9 +35,18 @@ class Reusable extends Renderable {
         $this->Alias = $alias;
     }
 
+    public function __get(string $request) : mixed {
+
+        if(!isset($this->$request)){
+            return null;
+        }
+
+        return $this->$request;
+    }
+
     protected function GetPath(\App\App $app) : string {
 
-        $fullPath = $app->ReusablesPath(false)."/{$this->FilePath}.reusable.phtml";
+        $fullPath = $app->GetPath(\App\App::PATH_TYPE_REUSABLES, false)."/{$this->FilePath}.reusable.phtml";
         return $fullPath;
     }
 }

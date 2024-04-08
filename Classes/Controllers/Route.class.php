@@ -14,7 +14,7 @@ class Route extends Renderable {
 
     protected function GetPath(\App\App $app) : string {
 
-        $fullPath = $app->ViewsPath(false)."/{$this->FilePath}.view.phtml";
+        $fullPath = $app->GetPath(\App\App::PATH_TYPE_VIEWS, false)."/{$this->FilePath}.view.phtml";
         return $fullPath;
     }
 }

@@ -42,6 +42,9 @@ $app->Bind('/char/+{capture}', 'UrlCapture/Chars');
 # Routes with Any value #
 $app->Bind('/any/[capture]', 'UrlCapture/Any');
 
+# Routes with the remains url #
+$app->Bind('/remain-url/capture=*', 'UrlCapture/Remain');
+
 # Criação de uma rota que sera usada como 
 $app->BindHTTPResponse(404, '/pagina-da-rota', 'YourErrorRoute', function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
     echo "You can call functions here!<br>";
@@ -54,6 +57,8 @@ $app->BindHTTPResponse(404, '/pagina-da-rota', 'YourErrorRoute', function($HTTP_
 $app->HTTPCallback(404, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
     echo "Multiple callbacks for and HTTP code {$HTTP_REQUEST}";
 });
+
+$app->AddComponent('Header', 'Header', \App\Controllers\Reusable::POSITION_BEFORE_CONTENT);
 
 # Execução da aplicaçao com as configurações feitas
 $app->Mount();
