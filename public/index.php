@@ -9,7 +9,6 @@ register_shutdown_function(function() {
 });
 
 use App\App;
-use App\Database\Connection;
 
 // ini_set('display_errors', '1');
 // ini_set('display_startup_errors', '1');
@@ -54,11 +53,6 @@ $app->BindHTTPResponse(404, '/pagina-da-rota', 'YourErrorRoute', function($HTTP_
 
 $app->HTTPCallback(404, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
     echo "Multiple callbacks for and HTTP code {$HTTP_REQUEST}";
-});
-
-# Criação de uma função de callback com relação direta ao erro "501"
-$app->HTTPCallback(501, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
-    echo "Error 501 in {$HTTP_REQUEST}";
 });
 
 # Execução da aplicaçao com as configurações feitas

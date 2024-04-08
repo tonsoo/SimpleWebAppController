@@ -11,6 +11,7 @@ class App {
     public const PATH_TYPE_VIEWS = 101;
 
     private string $ViewsPath;
+    private string $ReusablesPath;
 
     private string $Root;
     private string $DocumentRoot;
@@ -91,6 +92,12 @@ class App {
     public function ViewsPath(bool $unixPath = true) : string {
 
         $returnUrl = App::DocumentRoot($unixPath, true)."/{$this->ViewsPath}";
+        return $unixPath ? Url::ToUnix($returnUrl) : Url::ToOS($returnUrl);
+    }
+
+    public function ReusablesPath(bool $unixPath = true) : string {
+
+        $returnUrl = App::DocumentRoot($unixPath, true)."/{$this->ReusablesPath}";
         return $unixPath ? Url::ToUnix($returnUrl) : Url::ToOS($returnUrl);
     }
     # END STATIC FUNCTIONS #
@@ -229,7 +236,7 @@ class App {
         try{
             $renderRoute->Render($this, ...$routesData[$routePath]);
             $this->FindHTTPCallback($requestUrl);
-        } catch (Exceptions\RouteNotFound $e){
+        } catch (Exceptions\RenderableNotFound $e){
             $this->DefineHTTPCode(404, $requestUrl, $e->getMessage());
         } catch (Exception $e){
             $this->ExecuteHTTPCallback(500, $requestUrl, $e->getMessage());

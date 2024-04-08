@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Controllers;
+
+class Reusable extends Renderable {
+
+    public const POSITION_BEFORE_CONTENT = 0;
+    public const POSITION_AMONG_CONTENT = 1;
+    public const POSITION_AFTER_CONTENT = 2;
+
+    private int $Position;
+    private string $Alias;
+    private string $Path;
+
+    public function __construct(string $alias, string $filePath, int $contentPosition = Reusable::POSITION_AMONG_CONTENT, callable $callback = null) {
+
+        switch($contentPosition){
+            case Reusable::POSITION_AMONG_CONTENT:
+                
+                break;
+            case Reusable::POSITION_AMONG_CONTENT:
+            
+                break;
+            case Reusable::POSITION_AMONG_CONTENT:
+            
+                break;
+            default:
+                # TODO
+                # Throw an error
+        }
+
+        parent::__construct($filePath, $callback);
+
+        $this->Position = $contentPosition;
+        $this->Alias = $alias;
+    }
+
+    protected function GetPath(\App\App $app) : string {
+
+        $fullPath = $app->ReusablesPath(false)."/{$this->FilePath}.reusable.phtml";
+        return $fullPath;
+    }
+}
