@@ -10,9 +10,9 @@ register_shutdown_function(function() {
 
 use App\App;
 
-// ini_set('display_errors', '1');
-// ini_set('display_startup_errors', '1');
-// error_reporting(E_ALL);
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 
 require '../Classes/autoload.php';
 
@@ -59,6 +59,7 @@ $app->HTTPCallback(404, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
 });
 
 $app->AddComponent('Header', 'Header', \App\Controllers\Reusable::POSITION_BEFORE_CONTENT);
+$app->AddComponent('Produto', 'Produto', \App\Controllers\Reusable::POSITION_AMONG_CONTENT);
 
 # Execução da aplicaçao com as configurações feitas
-$app->Mount();
+$app->Mount('default.phtml');

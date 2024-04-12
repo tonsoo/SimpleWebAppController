@@ -20,9 +20,9 @@ abstract class Renderable {
         }
     }
 
-    protected abstract function GetPath(\App\App $app) : string;
+    protected abstract function GetPath() : string;
 
-    public function Render(\App\App $app, ...$args) : void {
+    public function Render(...$args) : void {
 
         $data = [];
         $this->Args = $args;
@@ -32,7 +32,7 @@ abstract class Renderable {
             $data = call_user_func($callback, $args);
         }
 
-        $fullPath = Utils\Url::ToOS($this->GetPath($app));
+        $fullPath = Utils\Url::ToOS($this->GetPath());
         $this->IncludeFile($fullPath, $data);
     }
 

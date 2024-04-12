@@ -12,10 +12,12 @@ class App {
     public const PATH_TYPE_CLASSES = 100;
     public const PATH_TYPE_VIEWS = 101;
     public const PATH_TYPE_REUSABLES = 102;
+    public const PATH_TYPE_PUBLIC = 103;
 
-    private string $ClassesPath;
-    private string $ViewsPath;
-    private string $ReusablesPath;
+    private static string $ClassesPath;
+    private static string $ViewsPath;
+    private static string $ReusablesPath;
+    private static string $PublicPath;
 
     private string $Root;
     private string $DocumentRoot;
@@ -23,6 +25,10 @@ class App {
     private array $Errors = [];
     private array $Routes = [];
     private array $Components = [];
+    private array $Render = [
+        'AMONG_CONTENT' => [],
+        'INFORMATION' => []
+    ];
 
     private array $AppSettings;
     private bool $AutoCreateRoutes;
@@ -36,6 +42,7 @@ class App {
         $this->SetPath('Classes', App::PATH_TYPE_CLASSES);
         $this->SetPath('Classes/Views', App::PATH_TYPE_VIEWS);
         $this->SetPath('Classes/Components', App::PATH_TYPE_REUSABLES);
+        $this->SetPath('public', App::PATH_TYPE_PUBLIC);
 
         $this->AutoCreateRoutes = $autoCreateRoutes;
         $this->AutoCreateComponents = $autoCreateComponents;
@@ -69,11 +76,17 @@ class App {
 
         $path = Url::InnerPath($path);
         switch($pathType){
+            case App::PATH_TYPE_CLASSES:
+                self::$ClassesPath = $path;
+                break;
             case App::PATH_TYPE_VIEWS:
-                $this->ViewsPath = $path;
+                self::$ViewsPath = $path;
                 break;
             case App::PATH_TYPE_REUSABLES:
-                $this->ReusablesPath = $path;
+                self::$ReusablesPath = $path;
+                break;
+            case App::PATH_TYPE_PUBLIC:
+                self::$PublicPath = $path;
                 break;
             default:
                 # TODO
@@ -90,25 +103,28 @@ class App {
         return Url::Diff(App::DocumentRoot($unixPath), pathinfo($_SERVER['SCRIPT_FILENAME'])['dirname'], $unixPath ? Url::Unix : Url::OS);
     }
 
-    public function GetPath(int $pathType, bool $unixPath) : string {
+    public static function GetPath(int $pathType, bool $unixPath = true) : string {
 
         $returnPath = '';
         switch($pathType){
             case App::PATH_TYPE_CLASSES:
-                $returnPath = "/{$this->ClassesPath}";
+                $returnPath = self::$ClassesPath;
                 break;
             case App::PATH_TYPE_VIEWS:
-                $returnPath = "/{$this->ViewsPath}";
+                $returnPath = self::$ViewsPath;
                 break;
             case App::PATH_TYPE_REUSABLES:
-                $returnPath = "/{$this->ReusablesPath}";
+                $returnPath = self::$ReusablesPath;
+                break;
+            case App::PATH_TYPE_PUBLIC:
+                $returnPath = self::$PublicPath;
                 break;
             default:
                 # TODO
                 # Throw an error
         }
 
-        $returnPath = App::DocumentRoot($unixPath, true)."{$returnPath}";
+        $returnPath = App::DocumentRoot($unixPath, true)."/{$returnPath}";
         return $unixPath ? Url::ToUnix($returnPath) : Url::ToOS($returnPath);
     }
 
@@ -121,7 +137,15 @@ class App {
 
 
     # START ROUTING FUNCTIONS #
-    public function Mount() : void {
+    public function Mount(string $fileName = 'default.phtml') : void {
+
+        $publicPath = App::GetPath(App::PATH_TYPE_PUBLIC);
+        $filePath = Url::ToOS("{$publicPath}/{$fileName}");
+        if(!file_exists($publicPath) || !is_dir($publicPath) || !file_exists($filePath)){
+            # TODO
+            # Throw error
+            return;
+        }
 
         $requestUrl = Url::Diff($this->Root, $_SERVER['REQUEST_URI']);
         $requestUrlPath = Url::ToArray($requestUrl);
@@ -250,12 +274,22 @@ class App {
         $renderRoute = $this->Routes[$routePath];
 
         try{
+            ob_start();
             $this->RenderComponents(Reusable::POSITION_BEFORE_CONTENT);
 
-            $renderRoute->Render($this, ...$routesData[$routePath]);
+            $amongContentComponents = array_filter($this->Components, function($e){
+                return $e->Position === Reusable::POSITION_AMONG_CONTENT ? $e : false;
+            });
+
+            $renderRoute->Render($this, ...$routesData[$routePath], ...$amongContentComponents);
             $this->FindHTTPCallback($requestUrl);
 
             $this->RenderComponents(Reusable::POSITION_AFTER_CONTENT);
+            $CONTENT = ob_get_clean();
+
+            require $filePath;
+
+            unset($CONTENT);
         } catch (Exceptions\RenderableNotFound $e){
             $this->DefineHTTPCode(404, $requestUrl, $e->getMessage());
         } catch (Exception $e){

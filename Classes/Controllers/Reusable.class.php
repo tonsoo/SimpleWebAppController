@@ -44,9 +44,9 @@ class Reusable extends Renderable {
         return $this->$request;
     }
 
-    protected function GetPath(\App\App $app) : string {
+    protected function GetPath() : string {
 
-        $fullPath = $app->GetPath(\App\App::PATH_TYPE_REUSABLES, false)."/{$this->FilePath}.reusable.phtml";
+        $fullPath = \App\App::GetPath(\App\App::PATH_TYPE_REUSABLES, false)."/{$this->FilePath}.reusable.phtml";
         return $fullPath;
     }
 }

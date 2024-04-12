@@ -12,9 +12,9 @@ class Route extends Renderable {
         $this->UrlPath = $urlPath;
     }
 
-    protected function GetPath(\App\App $app) : string {
+    protected function GetPath() : string {
 
-        $fullPath = $app->GetPath(\App\App::PATH_TYPE_VIEWS, false)."/{$this->FilePath}.view.phtml";
+        $fullPath = \App\App::GetPath(\App\App::PATH_TYPE_VIEWS, false)."/{$this->FilePath}.view.phtml";
         return $fullPath;
     }
 }
