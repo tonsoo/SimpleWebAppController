@@ -72,21 +72,21 @@ class App {
 
 
     # START CUSTOM PATHS #
-    public function SetPath(string $path, int $pathType = App::PATH_TYPE_VIEWS) : void {
+    public function SetPath(string $urlPath, int $urlPathType = App::PATH_TYPE_VIEWS) : void {
 
-        $path = Url::InnerPath($path);
-        switch($pathType){
+        $urlPath = Url::InnerPath($urlPath);
+        switch($urlPathType){
             case App::PATH_TYPE_CLASSES:
-                self::$ClassesPath = $path;
+                self::$ClassesPath = $urlPath;
                 break;
             case App::PATH_TYPE_VIEWS:
-                self::$ViewsPath = $path;
+                self::$ViewsPath = $urlPath;
                 break;
             case App::PATH_TYPE_REUSABLES:
-                self::$ReusablesPath = $path;
+                self::$ReusablesPath = $urlPath;
                 break;
             case App::PATH_TYPE_PUBLIC:
-                self::$PublicPath = $path;
+                self::$PublicPath = $urlPath;
                 break;
             default:
                 # TODO
@@ -103,10 +103,10 @@ class App {
         return Url::Diff(App::DocumentRoot($unixPath), pathinfo($_SERVER['SCRIPT_FILENAME'])['dirname'], $unixPath ? Url::Unix : Url::OS);
     }
 
-    public static function GetPath(int $pathType, bool $unixPath = true) : string {
+    public static function GetPath(int $urlPathType, bool $unixPath = true) : string {
 
         $returnPath = '';
-        switch($pathType){
+        switch($urlPathType){
             case App::PATH_TYPE_CLASSES:
                 $returnPath = self::$ClassesPath;
                 break;
@@ -153,14 +153,14 @@ class App {
         $renderRoute = null;
 
         $routesData = [];
-        foreach($this->Routes as $path => $route){
-            $routeUrlPath = Url::ToArray($path);
+        foreach($this->Routes as $urlPath => $route){
+            $routeUrlPath = Url::ToArray($urlPath);
 
-            if(count($requestUrlPath) < count($routeUrlPath) || (count($routeUrlPath) < count($requestUrlPath) && !preg_match('/\*[\/]{0,1}$/', $path))){
+            if(count($requestUrlPath) < count($routeUrlPath) || (count($routeUrlPath) < count($requestUrlPath) && !preg_match('/\*[\/]{0,1}$/', $urlPath))){
                 continue;
             }
 
-            $routesData[$path] = [];
+            $routesData[$urlPath] = [];
 
             $length = count($routeUrlPath);
 
@@ -186,7 +186,7 @@ class App {
                         break;
                     }
 
-                    $routesData[$path][$matches[1]] = $requestUrlValue;
+                    $routesData[$urlPath][$matches[1]] = $requestUrlValue;
                 } else if(preg_match('/^\+\((.*?)\)(\:([0-9]+)){0,1}$/', $routeUrlValue, $matches)){
                     # Get url Double value, +(value) #
 
@@ -201,7 +201,7 @@ class App {
                         $captureValue = number_format($captureValue, $format);
                     }
 
-                    $routesData[$path][$matches[1]] = $captureValue;
+                    $routesData[$urlPath][$matches[1]] = $captureValue;
                 } else if(preg_match('/^\{(.*?)\}(\:([0-9]+)){0,1}(\:([0-9]+)){0,1}$/', $routeUrlValue, $matches)){
                     # Get url String value, {value} #
 
@@ -217,7 +217,7 @@ class App {
                         }
                     }
 
-                    $routesData[$path][$matches[1]] = $captureValue;
+                    $routesData[$urlPath][$matches[1]] = $captureValue;
                 } else if(preg_match('/^\+\{(.*?)\}$/', $routeUrlValue, $matches)){
                     # Get url Char value/Single character value, +{value} #
 
@@ -226,12 +226,12 @@ class App {
                     }
 
                     $captureValue = $requestUrlValue;
-                    $routesData[$path][$matches[1]] = $captureValue;
+                    $routesData[$urlPath][$matches[1]] = $captureValue;
                 } else if(preg_match('/^\[(.*?)\]$/', $routeUrlValue, $matches)){
                     # Get url Any value, [value] #
 
                     $captureValue = $requestUrlValue;
-                    $routesData[$path][$matches[1]] = $captureValue;
+                    $routesData[$urlPath][$matches[1]] = $captureValue;
                 } else if(preg_match('/^((.*?)\=){0,1}\*$/', $routeUrlValue, $matches)){
                     # Get url Remain value, * #
 
@@ -241,14 +241,14 @@ class App {
                     }
                     $remainValue = implode('/', array_slice($requestUrlPath, $i));
 
-                    $routesData[$path][$remainKey] = $remainValue;
+                    $routesData[$urlPath][$remainKey] = $remainValue;
                 } else {
                     break;
                 }
             }
 
-            if($i < $length && isset($routesData[$path])){
-                unset($routesData[$path]);
+            if($i < $length && isset($routesData[$urlPath])){
+                unset($routesData[$urlPath]);
             }
         }
 
@@ -312,28 +312,28 @@ class App {
         }
     }
 
-    private function IncludeBind(string $path, string $filePath, callable $callback = null) : Route {
+    private function IncludeBind(string $urlPath, string $filePath, callable $callback = null) : Route {
 
-        $path = Url::InnerPath($path);
-        $route = new Route($path, $filePath, $callback);
-        $this->Routes[$path] = $route;
+        $urlPath = Url::InnerPath($urlPath);
+        $route = new Route($urlPath, $filePath, $callback);
+        $this->Routes[$urlPath] = $route;
 
         return $route;
     }
 
-    public function Bind(string $path, string $filePath, callable $callback = null) : void {
+    public function Bind(string $urlPath, string $filePath, callable $callback = null) : void {
 
-        $this->IncludeBind($path, $filePath, $callback);
+        $this->IncludeBind($urlPath, $filePath, $callback);
     }
 
-    public function BindHTTPResponse(int $code, string $path, string $filePath, callable $callback = null) : void {
+    public function BindHTTPResponse(int $code, string $urlPath, string $filePath, callable $callback = null) : void {
 
-        $route = $this->IncludeBind($path, $filePath);
+        $route = $this->IncludeBind($urlPath, $filePath);
 
-        $path = Url::InnerPath($path);
+        $urlPath = Url::InnerPath($urlPath);
         $this->HTTPCallback($code, $callback);
         if(isset($this->Errors[$code])){
-            $this->Errors[$code]['route'] = $path;
+            $this->Errors[$code]['route'] = $urlPath;
         }
     }
 
@@ -371,12 +371,12 @@ class App {
         $this->Errors[$code]['callback'][] = $callback;
     }
 
-    private function FindHTTPCallback(string $path) : bool {
+    private function FindHTTPCallback(string $urlPath) : bool {
         
-        $path = Url::InnerPath($path);
+        $urlPath = Url::InnerPath($urlPath);
         foreach($this->Errors as $code => $error) {
-            if(isset($error['route']) && $error['route'] === $path){
-                $this->ExecuteHTTPCallback($code, $path);
+            if(isset($error['route']) && $error['route'] === $urlPath){
+                $this->ExecuteHTTPCallback($code, $urlPath);
                 return true;
             }
         }
