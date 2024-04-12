@@ -1,30 +1,52 @@
+<?php
+use \App\App;
+?>
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="<?= App::GetConfig('app_lang') ?>">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="<?= App::GetConfig('app_charset') ?>" />
     <meta property="og:locale" content="pt_BR">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="author" content="REPLACE_PAGE_AUTHOR" />
-    <meta name="description" content="REPLACE_PAGE_DESCRIPTION" />
-    <meta name="url" content="REPLACE_URL" />
-    <meta name="robots" content="REPLACE_ROBOTS" />
-    <meta name="googlebot" content="REPLACE_ROBOTS" />
-    <meta property="og:title" content="REPLACE_PAGE_TITLE" />
-    <meta property="og:site_name" content="REPLACE_PAGE_TITLE">
-    <meta property="og:description" content="REPLACE_PAGE_DESCRIPTION" />
-    <meta property="og:image" content="REPLACE_OGG">
+    <meta name="author" content="<?= App::GetConfig('app_author') ?>" />
+    <meta name="description" content="<?= App::GetConfig('app_description') ?>" />
+    <meta name="url" content="<?= App::GetConfig('url') ?>" />
+    <meta name="robots" content="<?= App::GetConfig('app_robots') ?>" />
+    <meta name="googlebot" content="<?= App::GetConfig('app_robots') ?>" />
+    <meta property="og:title" content="<?= App::GetConfig('app_title') ?>" />
+    <meta property="og:site_name" content="<?= App::GetConfig('app_title') ?>">
+    <meta property="og:description" content="<?= App::GetConfig('app_description') ?>" />
+    <meta property="og:image" content="<?= App::GetConfig('url') ?><?= App::GetConfig('app_ogg') ?>">
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="600">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="REPLACE_URL" />
-    <meta name="keywords" content="REPLACE_KEYWORDS" />
-    <link rel="shortcut icon" sizes="144x144" href="REPLACE_ICON">
-    <title>REPLACE_PAGE_TITLE</title>
+    <meta property="og:url" content="<?= App::GetConfig('url') ?>" />
+    <meta name="keywords" content="<?= App::GetConfig('app_keywords') ?>" />
+    <link rel="shortcut icon" sizes="144x144" href="<?= App::GetConfig('url') ?><?= App::GetConfig('app_icon') ?>">
+    <title><?= App::GetConfig('app_title') ?></title>
     <link rel="canonical" href="REPLACE_CANONICAL" />
     <link rel="icon" sizes="144x144" href="REPLACE_ICON">
 </head>
 <body>
-    <?= $CONTENT ?>
+    <?= $_CONTENT ?>
+
+    <?php
+    if(App::GetConfig('developer_mode')){
+        if(App::GetConfig('display_configs')){ ?>
+            <h1>Currents Configs:</h1>
+            <pre>
+                <?php
+                print_r($_CONFIG);
+                ?>
+            </pre>
+            <?php
+        }
+        if(App::GetConfig('display_user_agent')){ ?>
+            <h1>User Agent:</h1>
+            <?php
+
+            echo '<h2>'.($_SERVER['HTTP_USER_AGENT'] ?? 'No user agent set').'</h2>';
+        }
+    } ?>
 </body>
 </html>

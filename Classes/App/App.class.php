@@ -9,15 +9,25 @@ use App\Utils\HTTP;
 use App\Exceptions;
 
 class App {
+
     public const PATH_TYPE_CLASSES = 100;
     public const PATH_TYPE_VIEWS = 101;
     public const PATH_TYPE_REUSABLES = 102;
     public const PATH_TYPE_PUBLIC = 103;
+    public const PATH_TYPE_SETTINGS = 104;
+
+    public const FORBIDDEN_SETTINGS = [
+        'document_root',
+        'server_root',
+        'host',
+        'url',
+    ];
 
     private static string $ClassesPath;
     private static string $ViewsPath;
     private static string $ReusablesPath;
     private static string $PublicPath;
+    private static string $SettingsPath;
 
     private string $Root;
     private string $DocumentRoot;
@@ -25,49 +35,58 @@ class App {
     private array $Errors = [];
     private array $Routes = [];
     private array $Components = [];
-    private array $Render = [
-        'AMONG_CONTENT' => [],
-        'INFORMATION' => []
-    ];
 
-    private array $AppSettings;
-    private bool $AutoCreateRoutes;
-    private bool $AutoCreateComponents;
+    private static array $AppSettings;
 
-    public function __construct(string $title = 'New App', bool $autoCreateRoutes = false, bool $autoCreateComponents = false) {
+    public function __construct() {
 
         $this->DocumentRoot = App::DocumentRoot();
         $this->Root = App::Root();
 
-        $this->SetPath('Classes', App::PATH_TYPE_CLASSES);
-        $this->SetPath('Classes/Views', App::PATH_TYPE_VIEWS);
-        $this->SetPath('Classes/Components', App::PATH_TYPE_REUSABLES);
-        $this->SetPath('public', App::PATH_TYPE_PUBLIC);
-
-        $this->AutoCreateRoutes = $autoCreateRoutes;
-        $this->AutoCreateComponents = $autoCreateComponents;
-
-        $this->AppSettings = [
-            'title' => $title,
+        self::$AppSettings = [
             'document_root' => $this->DocumentRoot,
             'server_root' => $this->Root,
             'host' => $_SERVER['HTTP_HOST'],
-            'auto_create_routes' => $this->AutoCreateRoutes
+            'url' => "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}/{$this->Root}/",
         ];
+
+        $this->SetPath('Classes', App::PATH_TYPE_CLASSES);
+        $this->SetPath('Renderables/Views', App::PATH_TYPE_VIEWS);
+        $this->SetPath('Renderables/Components', App::PATH_TYPE_REUSABLES);
+        $this->SetPath('public', App::PATH_TYPE_PUBLIC);
+        $this->SetPath('Settings', App::PATH_TYPE_SETTINGS);
     }
 
-    public function SetConfig(string $index, mixed $value) : void {
+    private function Reconfigure() : void {
 
-        $this->AppSettings[$index] = $value;
-    }
-
-    public function GetConfig(string $index) : mixed {
-
-        if(!$this->AppSettings[$index]){
-            return null;
+        $settingsFolder = self::GetPath(App::PATH_TYPE_SETTINGS);
+        $filePath = "{$settingsFolder}/app.ini";
+        if(!file_exists($filePath)){
+            return;
         }
 
-        return $this->AppSettings[$index];
+        $newSettings = parse_ini_file($filePath);
+        foreach($newSettings as $setting => $value){
+            self::SetConfig($setting, $value);
+        }
+    }
+
+    public static function SetConfig(string $index, mixed $value) : void {
+
+        $index = strtolower($index);
+        if(in_array($index, App::FORBIDDEN_SETTINGS)){
+            return;
+        }
+
+        self::$AppSettings[$index] = $value;
+    }
+
+    public static function GetConfig(string $index) : mixed {
+
+        $index = strtolower($index);
+        $returnValue = self::$AppSettings[$index] ?? null;
+
+        return $returnValue;
     }
 
 
@@ -87,6 +106,10 @@ class App {
                 break;
             case App::PATH_TYPE_PUBLIC:
                 self::$PublicPath = $urlPath;
+                break;
+            case App::PATH_TYPE_SETTINGS:
+                self::$SettingsPath = $urlPath;
+                $this->Reconfigure();
                 break;
             default:
                 # TODO
@@ -118,6 +141,9 @@ class App {
                 break;
             case App::PATH_TYPE_PUBLIC:
                 $returnPath = self::$PublicPath;
+                break;
+            case App::PATH_TYPE_SETTINGS:
+                $returnPath = self::$SettingsPath;
                 break;
             default:
                 # TODO
@@ -285,11 +311,13 @@ class App {
             $this->FindHTTPCallback($requestUrl);
 
             $this->RenderComponents(Reusable::POSITION_AFTER_CONTENT);
-            $CONTENT = ob_get_clean();
+            $_CONTENT = ob_get_clean();
+            $_CONFIG = self::$AppSettings;
 
             require $filePath;
 
-            unset($CONTENT);
+            unset($_CONTENT);
+            unset($_CONFIG);
         } catch (Exceptions\RenderableNotFound $e){
             $this->DefineHTTPCode(404, $requestUrl, $e->getMessage());
         } catch (Exception $e){
@@ -302,11 +330,13 @@ class App {
     private function RenderComponents(int $position = Reusable::POSITION_BEFORE_CONTENT) : void {
 
         try {
+            $_CONFIG = self::$AppSettings;
             foreach($this->Components as $component){
                 if($component->Position === $position){
-                    $component->Render($this);
+                    $component->Render($this, _CONFIG:$_CONFIG);
                 }
             }
+            unset($_CONFIG);
         } catch (RenderableNotFound $e){
             echo 'Not found<br>';
         }
@@ -339,12 +369,14 @@ class App {
 
     public function AddComponent(string $alias, string $filePath = null, int $contentPosition = Reusable::POSITION_AMONG_CONTENT, callable $callback = null) : void {
 
-        if(is_null($filePath) && $this->AutoCreateComponents){
-            $filePath = $alias;
-        } else if (!$this->AutoCreateComponents && is_null($filePath)) {
-            # TODO
-            # Throw an error
-            return;
+        if(is_null($filePath)){
+            if(App::GetConfig('auto_create_renderables')){
+                $filePath = $alias;
+            } else {
+                # TODO
+                # Throw an error
+                return;
+            }
         }
 
         $component = new Reusable($alias, $filePath, $contentPosition, $callback);

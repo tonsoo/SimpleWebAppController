@@ -16,7 +16,14 @@ error_reporting(E_ALL);
 
 require '../Classes/autoload.php';
 
-$app = new App("Application name");
+$app = new App();
+
+# Definição de caminhos customizados
+// $app->SetPath('new-public-folder', App::PATH_TYPE_PUBLIC);
+// $app->SetPath('new-classes-folder', App::PATH_TYPE_CLASSES);
+// $app->SetPath('new-views-folder', App::PATH_TYPE_VIEWS);
+// $app->SetPath('new-reusables-folder', App::PATH_TYPE_REUSABLES);
+// $app->SetPath('new-settings-folder', App::PATH_TYPE_SETTINGS);
 
 # Criação de novas rotas/paginas
 $app->Bind('/', 'YourPageFileName');
@@ -60,6 +67,7 @@ $app->HTTPCallback(404, function($HTTP_CODE, $HTTP_REQUEST, $HTTP_HEADERS) {
 
 $app->AddComponent('Header', 'Header', \App\Controllers\Reusable::POSITION_BEFORE_CONTENT);
 $app->AddComponent('Produto', 'Produto', \App\Controllers\Reusable::POSITION_AMONG_CONTENT);
+$app->AddComponent('Test', './CustomPath/Test', \App\Controllers\Reusable::POSITION_AMONG_CONTENT);
 
 # Execução da aplicaçao com as configurações feitas
 $app->Mount('default.phtml');

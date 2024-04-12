@@ -32,14 +32,29 @@ abstract class Renderable {
             $data = call_user_func($callback, $args);
         }
 
-        $fullPath = Utils\Url::ToOS($this->GetPath());
+        $fullPath = '';
+        if(\App\App::GetConfig('allow_custom_renderable_path') && substr($this->FilePath, 0, 2) === './'){
+            $filePath = substr($this->FilePath, 1);
+            $fullPath = \App\App::DocumentRoot().$filePath;
+        } else if(substr($this->FilePath, 0, 2) === './'){
+            # TODO
+            # Throw an error
+            return;
+        } else {
+            $fullPath = Utils\Url::ToOS($this->GetPath());
+        }
+
         $this->IncludeFile($fullPath, $data);
     }
 
     protected function IncludeFile(string $fullPath, $data) : void {
 
         if(!file_exists($fullPath)){
-            throw new Exceptions\RenderableNotFound("The route {$this->FilePath} does not exist.");
+            if(\App\App::GetConfig('auto_create_renderables')){
+                file_put_contents($fullPath, "<h1>{$fullPath}</h1><h1>This renderable has been created automatically!</h1><h2>Deactivate renderable creation in your \"app.ini\" file.</h2");
+            } else {
+                throw new Exceptions\RenderableNotFound("The route {$this->FilePath} does not exist.");
+            }
         }
 
         foreach($this->Args as $__name__ => $__value__){
